@@ -1,0 +1,415 @@
+<html>
+<base href="https://example.com">
+<head>
+    <title>Gerenciador de Cifras - Organização e Pesquisa de Arquivos Musicais</title>
+    <!-- Including necessary CDNs -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --primary-color: #4CAF50;
+            --secondary-color: #f0f0f0;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --primary-color: #bb86fc;
+            --secondary-color: #1e1e1e;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .theme-toggle {
+            cursor: pointer;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+        }
+        .folder, .cifra {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .folder:hover, .cifra:hover {
+            transform: scale(1.05);
+        }
+        .hidden {
+            display: none;
+        }
+        .svg-icon {
+            width: 24px;
+            height: 24px;
+            fill: var(--primary-color);
+            transition: fill 0.3s;
+        }
+        .svg-icon:hover {
+            fill: var(--secondary-color);
+        }
+        /* CSS Animation */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Modal styles */
+        .modal-content {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+        .form-control, .form-select {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--primary-color);
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="container-fluid">
+        <header class="d-flex justify-content-between align-items-center py-3">
+            <h1>Gerenciador de Cifras</h1>
+            <div class="theme-toggle">
+                <svg class="svg-icon" id="themeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M12 4.354a1 1 0 01.917.5l.002.003a1 1 0 01-.833 1.598h-.001a1 1 0 01-.917-1.5l.001-.001zm5.657 2.343a1 1 0 011.414 0l.001.001a1 1 0 11-1.414 1.414l-.001-.001a1 1 0 010-1.415zm-11.314 0a1 1 0 010 1.414l-.001.001a1 1 0 11-1.414-1.414l.001-.001a1 1 0 011.414 0zM12 6a6 6 0 100 12 6 6 0 000-12zm0 2a4 4 0 110 8 4 4 0 010-8zm5.657 7.343a1 1 0 011.414 1.414l-.001.001a1 1 0 11-1.414-1.414l.001-.001zM6 12a1 1 0 011-1h.002a1 1 0 01.997 1l-.001.002a1 1 0 01-1 1H7a1 1 0 01-1-1zm12 0a1 1 0 011-1h.002a1 1 0 01.997 1l-.001.002a1 1 0 01-1 1H19a1 1 0 01-1-1zm-6 5.657a1 1 0 01.707-.293h.002a1 1 0 01.707.293l.001.001a1 1 0 01-1.414 1.414l-.001-.001a1 1 0 010-1.414zM12 2a10 10 0 1010 10A10.011 10.011 0 0012 2z"/>
+                </svg>
+            </div>
+        </header>
+        <div class="row">
+            <div class="col-md-3">
+                <h3>Pastas</h3>
+                <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addFolderModal">
+                    <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 4H2v16h20V6H12l-2-2z"/></svg> Adicionar Pasta
+                </button>
+                <ul class="list-group" id="folderList">
+                    <!-- Folders will be dynamically inserted here -->
+                </ul>
+            </div>
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>Cifras</h3>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCifraModal">
+                        <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg> Adicionar Cifra
+                    </button>
+                </div>
+                <input type="text" id="searchBar" class="form-control mb-3" placeholder="Buscar por nome da música, artista ou pasta...">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="cifraTable">
+                        <thead>
+                            <tr>
+                                <th>Nome da Música</th>
+                                <th>Artista</th>
+                                <th>Página</th>
+                                <th>Pasta</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Cifras will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Folder Modal -->
+    <div class="modal fade" id="addFolderModal" tabindex="-1" aria-labelledby="addFolderModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content fade-in">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addFolderModalLabel">Adicionar Nova Pasta</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addFolderForm">
+              <div class="mb-3">
+                <label for="folderName" class="form-label">Nome da Pasta</label>
+                <input type="text" class="form-control" id="folderName" required>
+              </div>
+              <button type="submit" class="btn btn-primary">Adicionar</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Cifra Modal -->
+    <div class="modal fade" id="addCifraModal" tabindex="-1" aria-labelledby="addCifraModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content fade-in">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addCifraModalLabel">Adicionar Nova Cifra</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addCifraForm">
+              <div class="mb-3">
+                <label for="cifraName" class="form-label">Nome da Música</label>
+                <input type="text" class="form-control" id="cifraName" required>
+              </div>
+              <div class="mb-3">
+                <label for="cifraArtist" class="form-label">Artista</label>
+                <input type="text" class="form-control" id="cifraArtist" required>
+              </div>
+              <div class="mb-3">
+                <label for="cifraPage" class="form-label">Número da Página</label>
+                <input type="number" class="form-control" id="cifraPage">
+              </div>
+              <div class="mb-3">
+                <label for="cifraFile" class="form-label">Upload de Arquivo</label>
+                <input type="file" class="form-control" id="cifraFile" accept=".pdf,.doc,.docx">
+              </div>
+              <div class="mb-3">
+                <label for="cifraLink" class="form-label">Link da Web</label>
+                <input type="url" class="form-control" id="cifraLink">
+              </div>
+              <div class="mb-3">
+                <label for="cifraFolders" class="form-label">Pastas</label>
+                <select multiple class="form-select" id="cifraFolders">
+                  <!-- Folder options will be dynamically inserted here -->
+                </select>
+              </div>
+              <button type="submit" class="btn btn-success">Adicionar Cifra</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- View Cifra Modal -->
+    <div class="modal fade" id="viewCifraModal" tabindex="-1" aria-labelledby="viewCifraModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content fade-in">
+          <div class="modal-header">
+            <h5 class="modal-title" id="viewCifraModalLabel">Visualizar Cifra</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body" id="viewCifraContent">
+            <!-- Cifra content will be dynamically inserted here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Including necessary JS libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.7.107/pdf.min.js"></script>
+    <script>
+        // Theme Toggle
+        const themeToggle = document.querySelector('.theme-toggle');
+        const themeIcon = document.getElementById('themeIcon');
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', newTheme);
+        });
+
+        // Data Storage
+        let folders = JSON.parse(localStorage.getItem('folders')) || [];
+        let cifras = JSON.parse(localStorage.getItem('cifras')) || [];
+
+        // DOM Elements
+        const folderList = document.getElementById('folderList');
+        const cifraTableBody = document.querySelector('#cifraTable tbody');
+        const addFolderForm = document.getElementById('addFolderForm');
+        const addCifraForm = document.getElementById('addCifraForm');
+        const cifraFoldersSelect = document.getElementById('cifraFolders');
+        const searchBar = document.getElementById('searchBar');
+        const viewCifraContent = document.getElementById('viewCifraContent');
+
+        // Functions to Render Folders and Cifras
+        function renderFolders() {
+            folderList.innerHTML = '';
+            folders.forEach((folder, index) => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item folder fade-in';
+                li.innerHTML = `
+                    <span>${folder.name}</span>
+                    <div class="float-end">
+                        <svg class="svg-icon edit-folder me-2" data-index="${index}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.83-1.82z"/></svg>
+                        <svg class="svg-icon delete-folder" data-index="${index}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </div>
+                `;
+                folderList.appendChild(li);
+            });
+            renderFolderOptions();
+        }
+
+        function renderFolderOptions() {
+            cifraFoldersSelect.innerHTML = '';
+            folders.forEach((folder, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = folder.name;
+                cifraFoldersSelect.appendChild(option);
+            });
+        }
+
+        function renderCifras(filter = '') {
+            cifraTableBody.innerHTML = '';
+            const filteredCifras = cifras.filter(cifra => {
+                const searchTerm = filter.toLowerCase();
+                return (
+                    cifra.name.toLowerCase().includes(searchTerm) ||
+                    cifra.artist.toLowerCase().includes(searchTerm) ||
+                    folders.filter(index => cifra.folders.includes(index)).some(folderIndex => folders[folderIndex].name.toLowerCase().includes(searchTerm))
+                );
+            });
+            filteredCifras.forEach((cifra, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'cifra fade-in';
+                tr.innerHTML = `
+                    <td>${cifra.name}</td>
+                    <td>${cifra.artist}</td>
+                    <td>${cifra.page || '-'}</td>
+                    <td>${cifra.folders.map(f => folders[f].name).join(', ')}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info view-cifra" data-index="${index}">
+                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 4.5C7.305 4.5 3.5 8.305 3.5 13S7.305 21.5 12 21.5 20.5 17.695 20.5 13 16.695 4.5 12 4.5zm0 18c-4.2 0-7.5-3.3-7.5-7.5S7.8 7.5 12 7.5s7.5 3.3 7.5 7.5-3.3 7.5-7.5 7.5zM11 17h2v-2h-2v2zm0-4h2V7h-2v6z"/></svg>
+                        </button>
+                        <button class="btn btn-sm btn-warning edit-cifra" data-index="${index}">
+                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.83-1.82z"/></svg>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-cifra" data-index="${index}">
+                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                    </td>
+                `;
+                cifraTableBody.appendChild(tr);
+            });
+        }
+
+        // Initial Render
+        renderFolders();
+        renderCifras();
+
+        // Add Folder
+        addFolderForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const folderName = document.getElementById('folderName').value.trim();
+            if (folderName) {
+                folders.push({ name: folderName });
+                localStorage.setItem('folders', JSON.stringify(folders));
+                renderFolders();
+                addFolderForm.reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addFolderModal'));
+                modal.hide();
+            }
+        });
+
+        // Add Cifra
+        addCifraForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('cifraName').value.trim();
+            const artist = document.getElementById('cifraArtist').value.trim();
+            const page = document.getElementById('cifraPage').value;
+            const fileInput = document.getElementById('cifraFile');
+            const link = document.getElementById('cifraLink').value.trim();
+            const selectedFolders = Array.from(cifraFoldersSelect.selectedOptions).map(option => parseInt(option.value));
+
+            let fileURL = '';
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                fileURL = URL.createObjectURL(file);
+            } else if (link) {
+                fileURL = link;
+            }
+
+            if (name && artist && fileURL && selectedFolders.length > 0) {
+                cifras.push({
+                    name,
+                    artist,
+                    page: page || null,
+                    fileURL,
+                    folders: selectedFolders
+                });
+                localStorage.setItem('cifras', JSON.stringify(cifras));
+                renderCifras(searchBar.value);
+                addCifraForm.reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addCifraModal'));
+                modal.hide();
+            } else {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+            }
+        });
+
+        // Folder Actions
+        folderList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-folder')) {
+                const index = parseInt(e.target.getAttribute('data-index'));
+                if (confirm(`Tem certeza que deseja deletar a pasta "${folders[index].name}"?`)) {
+                    // Remove folder from folders
+                    folders.splice(index, 1);
+                    // Remove folder from all cifras
+                    cifras.forEach(cifra => {
+                        cifra.folders = cifra.folders.filter(f => f !== index);
+                        cifra.folders = cifra.folders.map(f => f > index ? f - 1 : f);
+                    });
+                    localStorage.setItem('folders', JSON.stringify(folders));
+                    localStorage.setItem('cifras', JSON.stringify(cifras));
+                    renderFolders();
+                    renderCifras(searchBar.value);
+                }
+            }
+            // Edit folder functionality can be added here
+        });
+
+        // Cifra Actions
+        cifraTableBody.addEventListener('click', (e) => {
+            if (e.target.closest('.view-cifra')) {
+                const index = parseInt(e.target.closest('.view-cifra').getAttribute('data-index'));
+                const cifra = cifras[index];
+                viewCifraContent.innerHTML = `
+                    <h5>${cifra.name} - ${cifra.artist}</h5>
+                    <p>Página: ${cifra.page || '-'}</p>
+                    <p>Pasta(s): ${cifra.folders.map(f => folders[f].name).join(', ')}</p>
+                    ${cifra.fileURL.endsWith('.pdf') ? `<canvas id="pdfViewer"></canvas>` :
+                     cifra.fileURL.endsWith('.doc') || cifra.fileURL.endsWith('.docx') ? `<iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(cifra.fileURL)}" width="100%" height="600px"></iframe>` :
+                     `<a href="${cifra.fileURL}" target="_blank">Abrir Arquivo</a>`}
+                `;
+                if (cifra.fileURL.endsWith('.pdf')) {
+                    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.7.107/pdf.worker.min.js';
+                    const loadingTask = pdfjsLib.getDocument(cifra.fileURL);
+                    loadingTask.promise.then(pdf => {
+                        pdf.getPage(1).then(page => {
+                            const scale = 1.5;
+                            const viewport = page.getViewport({ scale });
+                            const canvas = document.getElementById('pdfViewer');
+                            const context = canvas.getContext('2d');
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            const renderContext = {
+                                canvasContext: context,
+                                viewport: viewport
+                            };
+                            page.render(renderContext);
+                        });
+                    });
+                }
+                const viewModal = new bootstrap.Modal(document.getElementById('viewCifraModal'));
+                viewModal.show();
+            }
+
+            if (e.target.closest('.delete-cifra')) {
+                const index = parseInt(e.target.closest('.delete-cifra').getAttribute('data-index'));
+                if (confirm(`Tem certeza que deseja deletar a cifra "${cifras[index].name}"?`)) {
+                    cifras.splice(index, 1);
+                    localStorage.setItem('cifras', JSON.stringify(cifras));
+                    renderCifras(searchBar.value);
+                }
+            }
+
+            // Edit cifra functionality can be implemented similarly
+        });
+
+        // Search Functionality
+        searchBar.addEventListener('input', () => {
+            renderCifras(searchBar.value);
+        });
+    </script>
+</body>
+</html>
